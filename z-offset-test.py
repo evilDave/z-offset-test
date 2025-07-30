@@ -1,44 +1,58 @@
 #!/usr/bin/env python3
 import sys
+import re
+from typing import Optional
 
-# Thresholds for detecting normal and short lines
-SHORT_LINE_X_VALUE = 134.769
-NORMAL_LINE_X_VALUE = 144.769
+# ----- Tunable parameters ----------------------------------------------------
+SHORT_LINE_X_MIN = 130.0       # lower bound of “short” region   (inclusive)
+SHORT_LINE_X_MAX = 140.0       # upper bound of “short” region   (inclusive)
+# -----------------------------------------------------------------------------
 
-# Starting Z value
-START_Z_VALUE = 21
+START_Z_VALUE     = 21         # first Z height to write, 0.21mm, 0.01mm increments
 
-# Read the G-code file path from command line arguments
-file = sys.argv[1]
+# captures the first X value on a line
+X_RE = re.compile(r'X(-?\d+(?:\.\d+)?)', re.IGNORECASE)
 
-# Read the entire G-code file into memory
-with open(file, "r") as f:
-    lines = f.readlines()
+def extract_x(line: str) -> Optional[float]:
+    """Return the first X value in a G‑code line (or None if absent)."""
+    m = X_RE.search(line)
+    return float(m.group(1)) if m else None
 
-# Initialize the Z value counter and tracking variables
-current_z_value = START_Z_VALUE
-in_short_section = False
 
-# Overwrite the G-code file
-with open(file, "w") as of:
-    # Add a header indicating the file was postprocessed
-    of.write('; Postprocessed to add Z commands before short lines\n\n')
+def main(path: str) -> None:
+    with open(path) as f:
+        lines = f.readlines()
 
-    for i in range(len(lines)):
-        line = lines[i]
+    current_z = START_Z_VALUE
+    in_short_section = False
 
-        # Check if the line contains a short X value
-        if f"X{SHORT_LINE_X_VALUE}" in line and not in_short_section:
-            # Insert the G1 Z.nn command before the first short line in the section
-            of.write(f"G1 Z.{current_z_value}\n")
-            of.write(f"M300 P20 S{current_z_value}00\n")
-            current_z_value += 1
-            in_short_section = True
+    with open(path, 'w') as out:
+        out.write('; Post‑processed to add Z moves before short lines\n\n')
 
-        # Check if the line contains a normal X value
-        elif f"X{NORMAL_LINE_X_VALUE}" in line:
-            # Reset the short section flag after encountering a normal line
-            in_short_section = False
+        for line in lines:
+            x_val = extract_x(line) if line.startswith('G1') else None
 
-        # Write the original line back to the file
-        of.write(line)
+            # --- Entering a “short” section ---------------------------------
+            if (
+                x_val is not None and
+                SHORT_LINE_X_MIN <= x_val <= SHORT_LINE_X_MAX and
+                not in_short_section
+            ):
+                out.write(f';move Z up 0.01mm\n')
+                out.write(f'G1 Z.{current_z}\n')
+                out.write(f'M300 P20 S{current_z}00\n')
+                current_z += 1
+                in_short_section = True
+
+            # --- Leaving a “short” section ----------------------------------
+            elif x_val is not None and x_val > SHORT_LINE_X_MAX:
+                in_short_section = False
+
+            # Write the original (unchanged) G‑code line
+            out.write(line)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        sys.exit('Usage: add_z_for_short_lines.py <file.gcode>')
+    main(sys.argv[1])
