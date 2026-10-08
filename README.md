@@ -4,7 +4,7 @@ Model, Orca 3mf project and Python script for calibrating the z-offset on 3D pri
 
 ## Files
 
-- **`z-offset-test.py`** - Python script that processes G-code files to add Z-height adjustments for testing different z-offset values
+- **`z-offset-test.py`** - Python script that detects the long and short line X values in sliced G-code and adds incremental Z-height adjustments for testing different z-offset values
 - **`z-offset-test-model.step`** - 3D model file containing the calibration geometry designed for z-offset testing
 - **`z-offset-test.3mf`** - Orca Slicer project file with pre-configured settings and post-processing script integration
 
@@ -33,16 +33,19 @@ python3 z-offset-test.py <your_file.gcode>
 ```
 
 ### How it Works
-1. The script processes G-code files and looks for movement commands (G1) with X coordinates
-2. When it finds X coordinates between 130.0-140.0mm (the "short" region), it adds:
-   - A Z-height adjustment (starting at 0.21mm, incrementing by 0.01mm each time)
+1. The script starts processing after the `printing object` comment in the G-code (so travel and start G-code are ignored)
+2. It collects every X coordinate from G1 moves, then works out the long and short section X values automatically:
+   - Unique X values are split at the midpoint between the leftmost and rightmost X
+   - Only the right-hand boundary values (above that midpoint) are considered
+   - The most frequent of those is the long line; the second most frequent is the short line
+   - Those two values must differ by at least 5 mm
+3. On a second pass, when a G1 move hits the short-line X, the script inserts:
+   - A Z-height adjustment (starting at 0.21 mm, incrementing by 0.01 mm each time)
    - A beep command (M300) for audio feedback
-3. This creates a test pattern where different z-offset values are tested in sequence
+4. A later G1 move that hits the long-line X marks the end of that short section
+5. This creates a test pattern where different z-offset values are tested in sequence
 
-### Advanced Configuration
-You can adjust these parameters in the script:
-- `SHORT_LINE_X_MIN = 130.0` - Lower bound of the test region
-- `SHORT_LINE_X_MAX = 140.0` - Upper bound of the test region
+The determined long and short X values are written as comments at the top of the processed G-code.
 
 ### Manual setup in slicer
 These are the settings that are needed for the test script to work and for the print to show the differences of z-offset changes:

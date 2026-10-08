@@ -142,5 +142,5 @@ def main(path: str) -> None:
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        sys.exit('Usage: add_z_for_short_lines.py <file.gcode>')
+        sys.exit('Usage: z-offset-test.py <file.gcode>')
     main(sys.argv[1])
