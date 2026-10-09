@@ -16,10 +16,17 @@ This tool helps calibrate the z-offset by automatically adding incremental Z-hei
 
 ### Usage
 
+#### Initial setup
+Before running this test, set a rough z-offset so you are deliberately a little too close to the bed. The print then steps farther in 0.01mm increments, so starting slightly low keeps more of the useful range on the "too close" side of your current setting.
+
+- **Klipper (probe):** Run [`PROBE_CALIBRATE`](https://www.klipper3d.org/Probe_Calibrate.html) (home first, then the command in the terminal or your front-end's calibration menu). Use the paper test at the end, but err on the tight side so the nozzle is slightly closer than you would normally leave it.
+- **Klipper (Z endstop, no probe):** Same idea with [`Z_ENDSTOP_CALIBRATE`](https://www.klipper3d.org/Manual_Level.html#calibrating-a-z-endstop).
+- **Other firmware / manual:** Use the paper method (or your printer's equivalent first-layer calibration). Again, pull the paper tighter than usual so you know you are a touch too close, then fine-tune with this test.
+
 Regardless of method below, the test can be used like this:
-1. Leave your current z-offset as-is if first layers are already roughly okay. The script starts 0.05mm closer to the bed than the sliced 0.2mm layer, then steps farther away by 0.01mm each tab.
+1. Leave your current z-offset as-is once that rough setup is done (or if first layers were already roughly okay). The script starts 0.05mm closer to the bed than the sliced 0.2mm layer, then steps farther away by 0.01mm each tab.
 2. Slice / process / print the model
-3. Choose the best tab. Look for a flat surface with no tearing, but make sure you cannot see gaps in between the print lines. Pick a tab in the middle of the "good" range. The rounded-end tab is your current z-offset (0.20mm); the five tabs before it are closer, the ten after it are farther.
+3. Choose the best tab. Look for a flat surface with no tearing, but make sure you cannot see gaps in between the print lines. The rounded-end tab is your current z-offset (0.20mm); the five tabs before it are closer, the ten after it are farther. If several tabs look good, use the tradeoff in Tips below rather than defaulting to the middle one.
 4. Modify your z-offset accordingly. Count from the rounded tab: each tab before it is 0.01mm closer to the bed, each tab after it is 0.01mm farther.
 5. If every tab still looks too far from the bed (gaps between lines, no squish), your current z-offset is more than 0.05mm too high. Move it 0.05mm closer and run the test again.
 
@@ -108,4 +115,5 @@ Sliced with the settings above, every tab gets 10 lines and every gap gets 2:
 - The first tab starts at 0.15mm (0.05mm closer than the 0.2mm layer) and increments by 0.01mm each time, through 0.30mm
 - The rounded-end tab is the current z-offset (0.20mm). Count tabs from there rather than from the start of the print
 - Look for a tab of correctly squished first layer, then adjust your z-offset by 0.01mm per tab away from the rounded one
+- When more than one tab looks acceptable, it is a tradeoff: a little farther from the bed reduces elephant's foot and is often a good fit for PETG; a little closer improves bed adhesion, which helps with PLA. Pick where you want to sit on that balance
 - If the whole print is still too far from the bed, move your z-offset 0.05mm closer and try again
