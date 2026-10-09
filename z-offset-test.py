@@ -3,7 +3,7 @@ import sys
 import re
 from typing import Optional, List, Tuple
 
-START_Z_VALUE     = 21         # first Z height to write, 0.21mm, 0.01mm increments
+START_Z_VALUE     = 15         # first Z height to write, 0.15mm (0.05mm closer than a 0.2mm layer), 0.01mm increments
 
 # captures the first X value on a line
 X_RE = re.compile(r'X(-?\d+(?:\.\d+)?)', re.IGNORECASE)

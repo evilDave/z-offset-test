@@ -16,10 +16,11 @@ This tool helps calibrate the z-offset by automatically adding incremental Z-hei
 ### Usage
 
 Regardless of method below, the test can be used like this:
-1. Get your z-offset set to a value that is slightly too close to the bed. Look for thin lines or tearing on the top surface.
+1. Leave your current z-offset as-is if first layers are already roughly okay. The script starts 0.05mm closer to the bed than the sliced 0.2mm layer, then steps farther away by 0.01mm each section.
 2. Slice / process / print the model
-3. Choose the best "section" of the print. Look for flat surface with no tearing, but make sure you cannot see gaps in between the print lines. Pick a section in the middle of the "good" range.
-4. Modify your z-offset accordingly. Count the sections and add 0.01mm to the offset for each section after the first one (the first section is printed at exactly your current z-offset)
+3. Choose the best "section" of the print. Look for a flat surface with no tearing, but make sure you cannot see gaps in between the print lines. Pick a section in the middle of the "good" range.
+4. Modify your z-offset accordingly. The first section is 0.05mm closer than your current z-offset. Count the sections and add 0.01mm (farther from the bed) for each section after the first.
+5. If every section still looks too far from the bed (gaps between lines, no squish), your current z-offset is more than 0.05mm too high. Move it 0.05mm closer and run the test again.
 
 #### Method 1: Orca Slicer Integration
 1. Open `z-offset-test.3mf` in Orca Slicer
@@ -40,7 +41,7 @@ python3 z-offset-test.py <your_file.gcode>
    - The most frequent of those is the long line; the second most frequent is the short line
    - Those two values must differ by at least 5 mm
 3. On a second pass, when a G1 move hits the short-line X, the script inserts:
-   - A Z-height adjustment (starting at 0.21 mm, incrementing by 0.01 mm each time)
+   - A Z-height adjustment (starting at 0.15 mm, 0.05 mm closer than the 0.2 mm layer, incrementing by 0.01 mm each time)
    - A beep command (M300) for audio feedback
 4. A later G1 move that hits the long-line X marks the end of that short section
 5. This creates a test pattern where different z-offset values are tested in sequence
@@ -57,5 +58,6 @@ These are the settings that are needed for the test script to work and for the p
 
 ### Tips
 - Listen for the beeps to know when z-offset changes occur
-- The first test starts at 0.20mm and increments by 0.01mm each time
-- Look for a section of correctly squished first layer, then adjust your z-offset by the required amount (count the sections, the first one is exactly the current z-offset)
+- The first test starts at 0.15mm (0.05mm closer than the 0.2mm layer) and increments by 0.01mm each time
+- Look for a section of correctly squished first layer, then adjust your z-offset by the required amount (first section is 0.05mm closer than your current z-offset; add 0.01mm farther from the bed for each later section)
+- If the whole print is still too far from the bed, move your z-offset 0.05mm closer and try again
